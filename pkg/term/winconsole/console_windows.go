@@ -219,6 +219,30 @@ func getStdHandle(stdhandle int) uintptr {
 	return uintptr(handle)
 }
 
+func ConEmuStreams() (stdIn io.ReadCloser, stdOut, stdErr io.Writer) {
+	handler := &WindowsTerminal{
+		inputBuffer:         make([]byte, MAX_INPUT_BUFFER),
+		inputEscapeSequence: []byte(KEY_ESC_CSI),
+		inputEvents:         make([]INPUT_RECORD, MAX_INPUT_EVENTS),
+	}
+
+	if IsConsole(os.Stdin.Fd()) {
+		stdIn = &terminalReader{
+			wrappedReader: os.Stdin,
+			emulator:      handler,
+			command:       make([]byte, 0, ANSI_MAX_CMD_LENGTH),
+			fd:            getStdHandle(syscall.STD_INPUT_HANDLE),
+		}
+	} else {
+		stdIn = os.Stdin
+	}
+
+	stdOut = os.Stdout
+	stdErr = os.Stderr
+
+	return stdIn, stdOut, stdErr
+}
+
 func WinConsoleStreams() (stdIn io.ReadCloser, stdOut, stdErr io.Writer) {
 	handler := &WindowsTerminal{
 		inputBuffer:         make([]byte, MAX_INPUT_BUFFER),
