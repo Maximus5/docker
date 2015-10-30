@@ -10,6 +10,22 @@ import (
 	"github.com/Azure/go-ansiterm/winterm"
 )
 
+// ConEmuStreams returns prepared versions of console streams,
+// for proper use in ConEmu terminal.
+// The ConEmu terminal emulates ANSI on output streams well by default.
+func ConEmuStreams() (stdIn io.ReadCloser, stdOut, stdErr io.Writer) {
+	if IsConsole(os.Stdin.Fd()) {
+		stdIn = newAnsiReader(syscall.STD_INPUT_HANDLE)
+	} else {
+		stdIn = os.Stdin
+	}
+
+	stdOut = os.Stdout
+	stdErr = os.Stderr
+
+	return stdIn, stdOut, stdErr
+}
+
 // ConsoleStreams returns a wrapped version for each standard stream referencing a console,
 // that handles ANSI character sequences.
 func ConsoleStreams() (stdIn io.ReadCloser, stdOut, stdErr io.Writer) {
