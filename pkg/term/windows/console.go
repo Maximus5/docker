@@ -8,6 +8,10 @@ import (
 	"syscall"
 
 	"github.com/Azure/go-ansiterm/winterm"
+
+	"io/ioutil"
+	ansiterm "github.com/Azure/go-ansiterm"
+	"github.com/Sirupsen/logrus"
 )
 
 // ConEmuStreams returns prepared versions of console streams,
@@ -22,6 +26,22 @@ func ConEmuStreams() (stdIn io.ReadCloser, stdOut, stdErr io.Writer) {
 
 	stdOut = os.Stdout
 	stdErr = os.Stderr
+
+	// WARNING (BEGIN): sourced from newAnsiWriter
+
+	logFile := ioutil.Discard
+
+	if isDebugEnv := os.Getenv(ansiterm.LogEnv); isDebugEnv == "1" {
+		logFile, _ = os.Create("ansiReaderWriter.log")
+	}
+
+	logger = &logrus.Logger{
+		Out:       logFile,
+		Formatter: new(logrus.TextFormatter),
+		Level:     logrus.DebugLevel,
+	}
+
+	// WARNING (END): sourced from newAnsiWriter
 
 	return stdIn, stdOut, stdErr
 }
